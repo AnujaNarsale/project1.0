@@ -1,0 +1,50 @@
+name: Selenium TestNG CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Set up Chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Run tests with Maven
+        run: mvn -B clean test
+        continue-on-error: true
+
+      - name: Find test-output anywhere (debug)
+        if: always()
+        run: |
+          echo "Current directory:"
+          pwd
+          echo "----"
+          echo "Searching entire workspace for test-output folder:"
+          find / -type d -name "test-output" 2>/dev/null
+          echo "----"
+          echo "Searching for testng-results.xml anywhere:"
+          find / -name "testng-results.xml" 2>/dev/null
+          echo "----"
+          echo "Listing repo root:"
+          ls -la
+
+      - name: Upload TestNG Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: testng-report
+          path: test-output/
